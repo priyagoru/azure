@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:azure-data-lake-storage="http://www.mulesoft.org/schema/mule/azure-data-lake-storage"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/azure-data-lake-storage http://www.mulesoft.org/schema/mule/azure-data-lake-storage/current/mule-azure-data-lake-storage.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<azure-data-lake-storage:config name="Azure_Data_Lake_Storage_Connector_Config" doc:name="Azure Data Lake Storage Connector Config" doc:id="28a00bcc-31a8-4e52-8bb1-79633abde719" >
+		<azure-data-lake-storage:shared-access-signature-connection accountName="mulepriya" dnsSuffix="dfs.core.windows.net" sasToken="?sv=2021-06-08&amp;ss=bfqt&amp;srt=sco&amp;sp=rwdlacupx&amp;se=2022-07-16T16:51:33Z&amp;st=2022-07-14T08:51:33Z&amp;spr=https&amp;sig=QB8nKeZIyTCHZ1cC5emcoM9%2FDKMC%2BH0TjYAUZBAJVSk%3D" />
+	</azure-data-lake-storage:config>
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="e1cc8947-1b7a-4e9a-bf81-65d964943f3c" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="azuredatalake_createfilesystem" doc:id="ae01078c-1822-4fbd-8234-bac6c546f555" >
+		<http:listener doc:name="Request to create afile system" doc:id="942e21d4-aeab-4dd2-92bf-dd62cb437e3c" config-ref="HTTP_Listener_config" path="/mule"/>
+		<set-variable value="#[attributes.queryParams.priya]" doc:name="send FS to create" doc:id="1765b2d1-941d-49e3-9979-485b266ecdbc" variableName="filesystem"/>
+		<logger level="INFO" doc:name="Request received" doc:id="e9df542a-722c-4e37-aefa-b21094842e20" />
+		<azure-data-lake-storage:create-file-system doc:name="Create File System" doc:id="f9b39629-726a-4eeb-b03d-da2f589cbcfb" filesystem="#[vars.filesystem]" timeout="120" config-ref="Azure_Data_Lake_Storage_Connector_Config"/>
+		<logger level="INFO" doc:name="Response from data lake" doc:id="c58ece7d-7acd-412d-a7eb-54dade2b53d8" />
+	</flow>
+	<flow name="azure_deletefilesystem" doc:id="ee5744e9-f120-47f0-8613-dc5f129efc45" >
+		<http:listener doc:name="Request to delete a file system" doc:id="78533407-18c2-4905-a786-6bc8295c6755" config-ref="HTTP_Listener_config" path="/mule1"/>
+		<set-variable value="#[attributes.queryParams.sri]" doc:name="Set FS to delete" doc:id="e61a938b-2e16-4cd6-b7bc-f2659a929799" variableName="filesystem"/>
+		<logger level="INFO" doc:name="Request received" doc:id="322cc9fe-382c-4921-8ef1-59aedba62193" />
+		<azure-data-lake-storage:delete-file-system doc:name="Delete File System" doc:id="3fe86f7d-fccb-4a23-822d-2497384a7268" config-ref="Azure_Data_Lake_Storage_Connector_Config" filesystem="#[vars.filesystem]" timeout="120"/>
+		<logger level="INFO" doc:name="Response from date lake" doc:id="c4157129-b7c4-4755-8c28-3fc76d2dc149" />
+	</flow>
+	<flow name="azureFlow_createpath_directoryfile" doc:id="efc43faf-6304-4fd9-bca8-e0277afa37cd" >
+		<http:listener doc:name="Listener" doc:id="894bd17a-bdc8-471d-9ca8-37ced8a17997" config-ref="HTTP_Listener_config" path="/mule2"/>
+		<set-variable value="#[attributes.queryParams.p]" doc:name="Set file system" doc:id="f242294e-594a-41a7-889e-05ba5b87bb7c" variableName="filesystem"/>
+		<set-variable value="#[attributes.queryParams.sp]" doc:name="Set path" doc:id="2e045ccf-d10f-41e7-b0a5-8ef505ca9626" variableName="path"/>
+		<logger level="INFO" doc:name="Request received" doc:id="d43f414c-215f-4065-ba2b-bd4f5c3d9d02" />
+		<azure-data-lake-storage:create-or-rename doc:name="Create/Rename Path" doc:id="2322813b-efd8-4fc5-ad14-8f52d883dcb6" config-ref="Azure_Data_Lake_Storage_Connector_Config" fileSystem="#[vars.filesystem]" path="#[vars.path]" resource="directory"/>
+		<logger level="INFO" doc:name="Response from data lake" doc:id="2982c062-a217-4a9d-a2d4-d2f92ade6727" />
+	</flow>
+	<flow name="azureFlow" doc:id="17988149-4d53-4b7f-9d8d-81baa863e79d" >
+		<http:listener doc:name="Listener" doc:id="69304ef4-4880-4000-b24e-4d6694109ded" config-ref="HTTP_Listener_config" path="/mule3"/>
+		<azure-data-lake-storage:list-file-systems doc:name="List File Systems" doc:id="3de0e03e-b7ce-47b0-9c5d-8248b8b82fcd" config-ref="Azure_Data_Lake_Storage_Connector_Config"/>
+		<ee:transform doc:name="Read response" doc:id="a668612a-74f8-4158-82b9-f670661c5335" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+
+	payload
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Response from Data lake" doc:id="f2523756-045f-406a-ab9a-cc40f5b50c90" />
+	</flow>
+	<flow name="azureFlow1_listpaths" doc:id="d1f797dc-0e6a-48dd-b5f6-67eaed223b45" >
+		<http:listener doc:name="Listener" doc:id="432ee586-1733-457b-9dcf-76a41223651d" config-ref="HTTP_Listener_config" path="mule4"/>
+		<set-variable value="#[attributes.queryParams.dsp]" doc:name="Set file system" doc:id="a94d8da2-dedf-489f-b801-4e73393d08ea" variableName="filesystem"/>
+		<azure-data-lake-storage:list-paths doc:name="List Paths" doc:id="ae52e436-3b09-4ba6-ae4e-17eeb19ba47a" config-ref="Azure_Data_Lake_Storage_Connector_Config" filesystem="#[vars.filesystem]"/>
+		<ee:transform doc:name="read response" doc:id="91333a92-4117-4942-8d17-731234d5374a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Response from datalake" doc:id="1d891d69-04a3-48b4-abd7-a9622a7ebc92" />
+	</flow>
+	<flow name="azureFlow1" doc:id="acd6ffbb-3622-41f3-8c06-3c2408249f46" >
+		<http:listener doc:name="Listener" doc:id="380db319-c275-41a2-94e4-41044a60967e" config-ref="HTTP_Listener_config" path="/mule5"/>
+		<set-variable value="#[attributes.queryParams.sreepriya]" doc:name="Set file system" doc:id="6bc3e126-fc35-4a15-99e7-c11a9a5c126e" variableName="filesystem"/>
+		<set-variable value="#[attributes.queryParams.sree]" doc:name="Se tpath" doc:id="75af0f9e-e658-4c01-8d93-93b89da1b561" variableName="path"/>
+		<logger level="INFO" doc:name="Request received" doc:id="9bc2fb4c-e8fd-402d-9a16-07114860c63f" />
+		<azure-data-lake-storage:read-path doc:name="Read Path" doc:id="b2455b84-af4d-4370-9450-bca5099241f7" config-ref="Azure_Data_Lake_Storage_Connector_Config" fileSystem="#[vars.filesystem]" path="#[vars.path]" timeout="60" range="   "/>
+		<logger level="INFO" doc:name="Response from data lake" doc:id="dbe73e06-dc87-4044-b2cd-c44c87cb720e" />
+	</flow>
+</mule>
